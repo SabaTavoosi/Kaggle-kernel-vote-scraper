@@ -3,10 +3,10 @@
 This web application calculates the number of valid votes towards medals [Kaggle kernels](https://www.kaggle.com/kernels) have. It will also give some additional information such as how many more votes you need for medals, votes by each tier, as well as some summary statistics. You only need to to input the kernel URL that you want to extract information from and the app will take care of the rest. 
 
 You can test the app here: <font size = '3'> **https://sabatavoosi.shinyapps.io/kaggle-vote-scraper/** </font>  
-or download the .rmd code and run it in R. 
+or download the **.rmd** code and run it in R. 
 
 Demo picture:
-[![Imgur](https://i.imgur.com/7Msgi8U.png)](https://sabatavoosi.shinyapps.io/kaggle-vote-scraper/)
+[![Imgur](https://i.imgur.com/1ZX2kP3.png)](https://sabatavoosi.shinyapps.io/kaggle-vote-scraper/)
 
 <br>
 
