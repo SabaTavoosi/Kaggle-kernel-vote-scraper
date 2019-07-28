@@ -1,0 +1,393 @@
+---
+title: "Kaggle kernel vote scraper"
+# Author: Saba Tavoosi
+# Date: June 28, 2019
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: column
+    vertical_layout: fill
+    social: ["menu"]
+    source_code: embed
+    theme: yeti
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+# Load needed packages.
+library(shiny)
+library(flexdashboard) 
+library(rvest)
+library(stringr)
+library(ggplot2)
+library(DT)
+library(forcats)
+```
+
+
+``` {js}
+// Inverse navigation bar theme color
+$('.navbar-inverse').removeClass('navbar-inverse').addClass('navbar-default');
+```
+
+
+Vote scraper 
+=======================================================================
+
+Sidebar {.sidebar data-width=325}
+-----------------------------------------------------------------------
+
+<font size ="3"> **About the vote scraper** </font>
+
+<font size ="2"> This web application allows you to check how many valid votes towards medals you have on your [Kaggle](https://www.kaggle.com/kernels) kernels. Simply paste the URL of the kaggle kernel you want to extract information from in the box below to get started. </font>
+
+
+<font size ="3"> **Input Kaggle kernel URL here:** </font>
+
+```{r}
+# Create a text input. This is where the user will input kaggle URLs that will have their informations extracted.
+textInput("Kernel_URL", label = NA, width = '100%', 
+          value = "https://www.kaggle.com/tavoosi/predicting-box-office-revenue-with-random-forest", 
+          placeholder = "Input kaggle kernel URL here...")
+```
+
+<br> 
+
+<font size ="3"> 
+**Valid votes needed for each medal**  
+</font>
+
+| Medal                                           | Votes              |
+| :---------------------------------------------- | :----------------- |
+| <span style="color:#CD853F"> **Bronze** </span> | <span style="color:#CD853F"> **5** </span>  |
+| <span style="color:#BEBEBE"> **Silver** </span> | <span style="color:#BEBEBE"> **20** </span> |
+| <span style="color:#EEC900"> **Gold** </span>   | <span style="color:#EEC900"> **50** </span> |
+
+
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### **Valid votes towards medals** 
+
+```{r}
+# Create a reactive gauge that displays how many valid votes a kernel has and how close it is to medals.
+renderGauge({
+       
+       # Set webpage as the URL that is inputted by the user. 
+       webpage <- input$Kernel_URL
+
+       # Get the divs of the webpage.
+       div_js <- read_html(webpage) %>%
+                 html_node('div') %>%
+                 html_text() 
+
+       # Extract total upvote count.
+       total_upvotes <- str_extract(div_js, pattern = '(?<=upvoteCount\\":)[0-9]+') %>%
+              as.numeric()
+       
+       # Extract novice vote count. 
+       novice_vote_count <- str_count(div_js, pattern = '(?<=tier\\":\\")Novice(?=\\",\\"tierInt)')
+       
+       # Subtract novice vote count from total upvotes to get number of valid votes towards medals. 
+       valid_votes <- total_upvotes - novice_vote_count  
+       
+       # Create gauge for valid votes towards medals.
+       gauge(valid_votes, min = 0, max = 50, 
+             gaugeSectors(success = c(50, 50), warning = c(20, 49), danger = c(0, 19), 
+                          colors = c("#EEC900", "#BEBEBE", "#CD853F")))
+       
+       # Close out renderGauge()
+})
+```
+
+
+### Total votes
+
+```{r}
+# Create a value box for total number of votes.
+renderValueBox({
+
+       # Set webpage as the URL that is inputted by the user.
+       webpage <- input$Kernel_URL
+
+       # Get the divs of the webpage. Then extract total upvotes.
+       total_upvotes <- read_html(webpage) %>%
+                 html_node('div') %>%
+                 html_text() %>%
+                 str_extract(pattern = '(?<=upvoteCount\\":)[0-9]+') %>%
+                 as.numeric()
+
+       # Create value box for total upvotes.
+       valueBox(total_upvotes, icon = "fa-thumbs-up", color = 'success')
+       
+       # Close renderValueBox()
+})
+```
+
+
+### **Kernel summary** 
+
+```{r}
+# Create output table of kernel summary. 
+renderDT({
+
+       # Set webpage as the URL that is inputted by the user. 
+       webpage <- input$Kernel_URL 
+       
+       # Get the divs of the webpage
+       div_js <- read_html(webpage) %>% 
+                 html_node('div') %>%
+                 html_text()
+       
+       # Extract kernel title
+       title <- str_extract(div_js, pattern = '(?<=title\\":\\").+?(?=\\",\\"forkParent)')
+       
+       # Extract display name
+       display_name <- str_extract(div_js, pattern = '(?<=displayName\\":\\").+?(?=\\",\\"email)')
+       
+       # Extract Kernel language
+       language <- str_extract(div_js, pattern = '(?<=language\\":\\").+?(?=\\",\\"isGpuEnabled)') %>%
+         str_to_title()
+       
+       # Extract number of versions the kernel has 
+       version_count <- str_extract(div_js, pattern = '(?<=versionNumber\\":)[0-9]+') 
+       
+       # Extract total upvote count 
+       total_upvotes <- str_extract(div_js, pattern = '(?<=upvoteCount\\":)[0-9]+') %>%
+              as.numeric()
+       
+       # Extract view count 
+       view_count <- str_extract(div_js, pattern ='(?<=viewCount\\":)[0-9]+') %>%
+              as.numeric()
+       
+       # extract current medal
+       current_medal <- str_extract(div_js, pattern = '(?<=medal\\":\\").+?(?=\\",\\"topicId)') %>%
+         str_to_title()
+       
+       # Extract number of votes from novices. We will subtract this number from 
+       # total number of votes in order to get number of valid votes. 
+       novice_vote_count <- str_count(div_js, pattern = '(?<=tier\\":\\")Novice(?=\\",\\"tierInt)')
+       
+       valid_votes <- total_upvotes - novice_vote_count
+       
+       # Create variables for how many votes are needed to get a bronze, silver,
+       # and gold medal.
+       bronze_votes <- 5 - valid_votes
+       silver_votes <- 20 - valid_votes
+       gold_votes <- 50 - valid_votes
+       
+       # Create matrix with all the kernel information we have extracted. 
+       kernel_summary <- rbind(title, display_name, language, 
+                               current_medal, bronze_votes, silver_votes,
+                               gold_votes)
+       
+       # Add row names to the kernel_summary
+       row_names <- c('Title', 'Kernel author', 'Language', 
+                      'Current medal', 'Votes until bronze', 'Votes until silver', 
+                      'Votes until gold')
+       
+       # Column bind row_names and kernel_summary 
+       summary <- cbind(row_names, kernel_summary)
+       
+       # Create data table that displays kernel summary
+       datatable(summary,
+                     rownames = FALSE,
+                     colnames = "",
+                     class = 'cell-border stripe',
+                   #  selection = 'none',
+                     options = list(dom = 't', 
+                                    bSort = FALSE,
+                                  #  autoWidth = TRUE,
+                                    headerCallback = JS(
+              "function(thead, data, start, end, display){",
+              "  $(thead).remove();",
+              "}"))
+                 )
+       
+       # Close renderDT()
+})
+```
+
+
+
+Column {data-width=1000}
+-----------------------------------------------------------------------
+
+### Summary statistics {.no-title}
+
+```{r fig.height=3}
+# Create plot of total number of votes, valid votes, comments, and forks. 
+renderPlot({
+       
+       # Set webpage as the URL that is inputted by the user. 
+       webpage <- input$Kernel_URL 
+       
+       # Get the divs of the webpage
+       div_js <- read_html(webpage) %>% 
+                 html_node('div') %>%
+                 html_text()
+
+       # Extract number of comments on the kernel.
+       comment_count <- str_extract(div_js, pattern = '(?<="comments","count":)[0-9]+') %>%
+              as.numeric()
+       
+       # Extract total upvote count 
+       total_upvotes <- str_extract(div_js, pattern = '(?<=upvoteCount\\":)[0-9]+') %>%
+              as.numeric()
+       
+       # Extract view count 
+       view_count <- str_extract(div_js, pattern ='(?<=viewCount\\":)[0-9]+') %>%
+              as.numeric()
+       
+       # Extract fork count
+       fork_count <- str_extract(div_js, pattern ='(?<=forkCount\\":)[0-9]+') %>%
+              as.numeric
+       
+       # Extract number of votes from novices. We will subtract this number from 
+       # total number of votes in order to get number of valid votes. 
+       novice_vote_count <- str_count(div_js, pattern = '(?<=tier\\":\\")Novice(?=\\",\\"tierInt)')
+       
+       valid_votes <- total_upvotes - novice_vote_count
+       
+       # Create matrix with all the kernel information we have extracted. 
+       kernel_summary <- rbind(total_upvotes, valid_votes, fork_count, 
+                               comment_count)
+       
+       # Create vector to add as row names to the kernel_summary
+       row_names <- c('Total votes', 'Valid votes', 'Forks', 'Comments')
+       
+       # Column bind row_names and kernel_summary
+       data <- cbind(row_names, kernel_summary)
+       
+       # Change column names
+       colnames(data) <- c('Measure', 'Count')
+       
+       # Remove id row
+       rownames(data) <- c()
+       
+       # Turn into a data frame
+       data <- as.data.frame(data)
+       
+       # Turn Count into a numeric
+       data$Count <- as.numeric(as.character(data$Count))
+       
+       # Create bar plot
+       ggplot(data, aes(x = reorder(Measure, Count), y = Count)) +
+              geom_bar(stat = "identity", 
+                       aes(fill = Measure), show.legend = FALSE,
+                       fill = c( "#1E90FF", "#1C86EE", "#1874CD", "#104E8B")) +
+              geom_label(aes(label = Count), size = 5) +
+              labs(title = 'Summary statistics', x = 'Measure', y = 'Count') +
+           #   scale_y_continuous(expand=c(0, 0)) + 
+              theme_classic() + 
+              theme(legend.position = "none",
+                    plot.title = element_text(size = 16, hjust = 0.5),
+                    axis.title = element_text(size = 12), 
+                    axis.title.x = element_blank(),
+                    axis.text = element_text(size = 12), 
+                    axis.text.x = element_text(angle = 0))
+       
+       # Close renderPlot()
+})
+```
+
+
+### Number of votes by tier {.no-title}
+
+```{r fig.height=3}
+# Create plot of number of votes by tier. 
+renderPlot({
+       
+       # Set webpage as the URL that is inputted by the user. 
+       webpage <- input$Kernel_URL 
+       
+       # Get the divs of the webpage
+       div_js <- read_html(webpage) %>% 
+                 html_node('div') %>%
+                 html_text()
+       
+       # Extract list with votes from each tier (i.e., novice, contributor, master,
+       # grandmaster, staff). Next, count the number of votes from each tier. 
+       tier_votes <- str_extract_all(div_js, pattern = '(?<=tier\\":\\").+?(?=\\",\\"tierInt)') 
+       
+       tier_count <- table(tier_votes) %>%
+              as.data.frame() 
+
+       # Order the tiers by their appropriate rank.
+       tier_count$tier_votes <- factor(tier_count$tier_votes, levels = c("Novice", "Contributor", "Expert", "Master", "Grandmaster", "Staff"), ordered = TRUE)
+
+       # Create an empty color object for tier and then assign specific colors to 
+       # each tier. We will use this in our plot. 
+       tier_color = rep(NA, length=length(tier_count$tier_votes))
+       tier_color[which(tier_count$tier_votes=="Novice")] = "#B4EEB4"
+       tier_color[which(tier_count$tier_votes=="Contributor")] = "#87CEFF"
+       tier_color[which(tier_count$tier_votes=="Expert")] = "#AB82FF"
+       tier_color[which(tier_count$tier_votes=="Master")] = "#FF7F50"
+       tier_color[which(tier_count$tier_votes=="Grandmaster")] = "#EEC900"
+       tier_color[which(tier_count$tier_votes=="Staff")] = "#1E90FF"
+
+       # Create box plot of number of votes by tier.
+       ggplot(tier_count, aes(x = tier_votes, y = Freq)) +
+              geom_bar(stat = "identity", aes(fill = fct_inorder(tier_color)), show.legend = FALSE) +
+              geom_label(aes(label = Freq), size = 5) +
+              scale_fill_manual(values = tier_color) + 
+              labs(title = 'Number of votes by tier', 
+                   x = 'Tier', y = 'Number of votes') +
+           #   scale_y_continuous(expand=c(0, 0)) + 
+              theme_classic() + 
+              theme(legend.position = "none",
+                    plot.title = element_text(size = 16, hjust = 0.5),
+                    axis.title = element_text(size = 12), 
+                    axis.text = element_text(size = 12), 
+                    axis.text.x = element_text(angle = 0))
+
+       # Close out renderPlot()
+})
+```
+
+
+
+About {data-icon="fa-info-circle"}
+=======================================================================
+
+Column {data-width=333}
+-----------------------------------------------------------------------
+
+### 
+
+<font size ="4"> **Votes needed for each medal**</font>  
+(votes by novices, self-votes, and old votes are not counted towards medals)
+
+* **Bronze:** 5 votes  
+
+* **Silver:** 20 votes  
+
+* **Gold:** 50 votes  
+
+
+Column {data-width=333}
+-----------------------------------------------------------------------
+
+###
+
+<font size ="4"> **Notes** </font>  
+
+* The app does not work on private kernels. 
+
+* The app does not recognize self-votes by kernel authors and, thus, counts them towards valid votes. Subtract the valid votes by 1 if the author has cast a self-vote for accurate votes towards medals.  
+
+* For kernels with over 1000 votes the app might not display correct number of valid votes and number votes by tiers due to it not being able to access information of all voters. However, the summary statistics should still be correct.   
+
+
+Column {data-width=333}
+-----------------------------------------------------------------------
+
+### 
+
+<font size ="4"> **About** </font>  
+[Kaggle](https://www.kaggle.com/) is a data science community where users can publish data science related projects, also known as *kernels*, and compete in competitions. This web applications is designed to scrape and calculate the number of valid votes (meaning votes by non-novices) kernels have so that users can easily find out how close they are to getting medals without having to manually count the number of valid votes. 
+
+This app was made just for fun and is not affiliated with Kaggle. 
+
+Feel free to check out my kaggle profile and kernels at <https://www.kaggle.com/tavoosi>  
+
