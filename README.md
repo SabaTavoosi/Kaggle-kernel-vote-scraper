@@ -1,5 +1,7 @@
 # Kaggle kernel vote scraper  
 
+*Note: This app is not endorsed by Kaggle.*
+
 This web application calculates the number of valid votes towards medals [Kaggle kernels](https://www.kaggle.com/kernels) have. It will also give some additional information such as how many more votes you need for medals, votes by each tier, as well as some summary statistics. You only need to to input the kernel URL that you want to extract information from and the app will take care of the rest. 
 
 You can test the app here: <font size = '3'> **https://sabatavoosi.shinyapps.io/kaggle-vote-scraper/** </font>  
