@@ -7,10 +7,16 @@ output:
     orientation: column
     vertical_layout: fill
     social: ["menu"]
-    source_code: embed
+    source_code: "https://github.com/SabaTavoosi/Kaggle-kernel-vote-scraper/blob/master/Kaggle%20kernel%20vote%20scraper.Rmd"
     theme: yeti
 runtime: shiny
 ---
+
+```{r include=FALSE}
+#
+# This app is NOT endorsed by Kaggle.
+#
+```
 
 ```{r setup, include=FALSE}
 # Load needed packages.
@@ -61,6 +67,12 @@ textInput("Kernel_URL", label = NA, width = '100%',
 | <span style="color:#CD853F"> **Bronze** </span> | <span style="color:#CD853F"> **5** </span>  |
 | <span style="color:#BEBEBE"> **Silver** </span> | <span style="color:#BEBEBE"> **20** </span> |
 | <span style="color:#EEC900"> **Gold** </span>   | <span style="color:#EEC900"> **50** </span> |
+
+<br>
+<br>
+<br>
+
+**This app is NOT endorsed by Kaggle.**
 
 
 
@@ -355,14 +367,19 @@ Column {data-width=333}
 
 ### 
 
-<font size ="4"> **Votes needed for each medal**</font>  
-(votes by novices, self-votes, and old votes are not counted towards medals)
+<font size ="4"> **Rules for valid votes**</font>  
+According to Kaggle's public rules the following votes are not counted towards medals: 
 
-* **Bronze:** 5 votes  
+* Votes by novices, 
+* Self-votes, and 
+* Old votes
 
-* **Silver:** 20 votes  
+Furthermore, Kaggle has additional secret rules regarding how votes are counted and these can affect when one gets a medal as well.
 
-* **Gold:** 50 votes  
+**How the app calculates valid votes**  
+This app derives the number of valid votes using an over simplified process of deducting votes by novices from total votes and should, thus, not be taken as being completely accurete as it does not take into account any other rules (such as self-votes, old votes, or other any secret voting rules Kaggle has). If you appear to have enough votes but not a medal it is because the app does not take into account these other rules in its calculations and has derived at a wrong valid vote estimate.
+
+The app should just be used for fun and there is no guarantee of accuracy.
 
 
 Column {data-width=333}
@@ -374,7 +391,7 @@ Column {data-width=333}
 
 * The app does not work on private kernels. 
 
-* The app does not recognize self-votes by kernel authors and, thus, counts them towards valid votes. Subtract the valid votes by 1 if the author has cast a self-vote for accurate votes towards medals.  
+* The app does not recognize self-votes by kernel authors and, thus, counts them towards valid votes. Subtract the valid votes by 1 if the author has cast a self-vote for more accurate votes towards medals.  
 
 * For kernels with over 1000 votes the app might not display correct number of valid votes and number votes by tiers due to it not being able to access information of all voters. However, the summary statistics should still be correct.   
 
@@ -387,7 +404,6 @@ Column {data-width=333}
 <font size ="4"> **About** </font>  
 [Kaggle](https://www.kaggle.com/) is a data science community where users can publish data science related projects, also known as *kernels*, and compete in competitions. This web applications is designed to scrape and calculate the number of valid votes (meaning votes by non-novices) kernels have so that users can easily find out how close they are to getting medals without having to manually count the number of valid votes. 
 
-This app was made just for fun and is not affiliated with Kaggle. 
+<br>
 
-Feel free to check out my kaggle profile and kernels at <https://www.kaggle.com/tavoosi>  
-
+**This app is NOT endorsed by Kaggle.**
