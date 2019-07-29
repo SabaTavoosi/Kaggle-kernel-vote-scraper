@@ -13,10 +13,11 @@ runtime: shiny
 ---
 
 ```{r include=FALSE}
-#
+# 
 # This app is NOT endorsed by Kaggle.
 #
 ```
+
 
 ```{r setup, include=FALSE}
 # Load needed packages.
@@ -44,7 +45,7 @@ Sidebar {.sidebar data-width=325}
 
 <font size ="3"> **About the vote scraper** </font>
 
-<font size ="2"> This web application allows you to check how many valid votes towards medals you have on your [Kaggle](https://www.kaggle.com/kernels) kernels. Simply paste the URL of the kaggle kernel you want to extract information from in the box below to get started. </font>
+<font size ="2"> This web application allows you to estimate how many valid votes towards medals you have on your [Kaggle](https://www.kaggle.com/kernels) kernels. Simply paste the URL of the kaggle kernel you want to extract information from in the box below to get started. </font>
 
 
 <font size ="3"> **Input Kaggle kernel URL here:** </font>
@@ -79,7 +80,7 @@ textInput("Kernel_URL", label = NA, width = '100%',
 Column {data-width=1000}
 -----------------------------------------------------------------------
 
-### **Valid votes towards medals** 
+### **Estimated valid votes towards medals** 
 
 ```{r}
 # Create a reactive gauge that displays how many valid votes a kernel has and how close it is to medals.
@@ -374,10 +375,10 @@ According to Kaggle's public rules the following votes are not counted towards m
 * Self-votes, and 
 * Old votes
 
-Furthermore, Kaggle has additional secret rules regarding how votes are counted and these can affect when one gets a medal as well.
+Furthermore, Kaggle has additional secret rules regarding how votes are counted and these can affect when one gets medals as well.
 
 **How the app calculates valid votes**  
-This app derives the number of valid votes using an over simplified process of deducting votes by novices from total votes and should, thus, not be taken as being completely accurete as it does not take into account any other rules (such as self-votes, old votes, or other any secret voting rules Kaggle has). If you appear to have enough votes but not a medal it is because the app does not take into account these other rules in its calculations and has derived at a wrong valid vote estimate.
+This app derives the number of valid votes using an over simplified process of deducting votes by novices from total votes and should, thus, not be taken as being completely accurete as it does not take into account any other rules (such as self-votes, old votes, or any other secret voting rules Kaggle has). If you appear to have enough votes but not a medal it is because the app does not take into account these other rules in its calculations and has derived at a wrong valid vote estimate.
 
 The app should just be used for fun and there is no guarantee of accuracy.
 
